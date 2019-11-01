@@ -1,6 +1,6 @@
 ## Motivation
 
-We cannot trust cloud providers but still want to use their services. We need to encrypt data that we are storing. The bottleneck in this setup should be the speed with which your data is encrypted with.
+We cannot trust cloud providers but still want to use their services. We need to encrypt data that we are storing.
 
 ### Configuration
 - Configuration file should be named `.dropconfig`.
