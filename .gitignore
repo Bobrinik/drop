@@ -3,4 +3,5 @@ drop/
 data/
 __pycache__/
 repository/
+tests/__pycache__/*
 .dropconfig
