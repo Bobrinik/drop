@@ -2,28 +2,29 @@
 
 We cannot trust cloud providers but still want to use their services. We need to encrypt data that we are storing. The bottleneck in this setup should be the speed with which your data is encrypted with.
 
-### Examples
+### Configuration
+- Configuration file should be named `.dropconfig`.
+- It should contain the fields bellow.
 ```
-## Configuation file
-
 {
+    "repository":"./repository",
     "devices": [
         {
-            "name": "storage_name",
-            "input": "/path/to/folder/with/binary/files",
-            "outptut": "/path/to/concatenated/file"
+            "name": "str",
+            "input": "./data",
+            "mount_point": "./mount"
         }
     ]
 }
 
 ```
+- `repository`: this field contains a path to where all of the assembled binary filesa are going to be stored.
+- `name`: this field contains a name that is going to be used for assembled binary file.
+- `input`: this field contains where split binary files are located.
+- `mount_point`: this field contains a path to a folder on which the assemble and decrypted binary file is going to be mounted.
 
+### Example usage
 ```
-$ drop mount storage_name /folder/to/mount
-$ drop unmount storage_name /folder/to/unmount
+$ drop mount name_from_dropconfig
+$ drop unmount name_from_dropconfig
 ```
-
-### Specification
-- name: This flag is going to select a configuration from the device file
-- mount: This command is going to concatenate all of the files in the input path and save the result in the output path using the `name` as a file name and will mount the file onto the folder passed into `mount` flag.
-- umount: This command is going to unmount a folder break the file with `name` in it's output folder and store the resullts in the input folder after removing the files in the folder.

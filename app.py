@@ -1,11 +1,27 @@
 import click
 import json
 import subprocess
+from sys import exit
 from os import listdir, remove
 from os.path import isfile, join, isdir, exists
 from typing import List
 
 configs = None
+
+
+class Options:
+    def __init__(self):
+        self.verbose = False
+
+
+pass_config = click.make_pass_decorator(Options, ensure=True)
+
+
+def check_existence(paths: List[str]):
+    for path in paths:
+        if not exists(path):
+            click.echo(f'{path} does not exist')
+            exit(1)
 
 
 def validate_config(config):
@@ -44,9 +60,8 @@ def load_configs():
     it will throw an error else it will silently load it and other
     programs can use it in the background.
     '''
-    files = [file for file in listdir('.') if isfile(
-        file) and file == '.dropconfig']
-    print(files)
+    files = [file for file in listdir('.')
+             if isfile(file) and file == '.dropconfig']
 
     if len(files) == 0:
         raise ValueError(".dropconfig is not found in the current directory")
@@ -68,58 +83,66 @@ def get_configuration(config, name):
 
 def run_command(command: List[str]):
     result = subprocess.run(command, capture_output=True)
-    print(result)
     if result.returncode:
         raise ValueError(f'{result.stderr}')
 
 
 @click.group()
-def cli():
+@click.option('--verbose', is_flag=True)
+@pass_config
+def cli(opts, verbose):
+    opts.verbose = verbose
     pass
 
 
 @cli.command()
 @click.argument('name', required=True)
-def mount(name):
+@pass_config
+def mount(opts, name):
     config = get_configuration(configs, name)
     in_path, mount_point = config['input'], config['mount_point']
-    # We are going to store assembled images in the repository
     repo = configs['repository']
-    # need to check that the repository exists b4 going further
-    # need to check that the input exists b4 going further
-    # sort the files by name and then concatenate them together
+
+    check_existence([in_path, repo])
+
     files = sorted([join(in_path, file) for file in listdir(in_path)])
 
     if any(map(isdir, files)):
-        raise TypeError(f'{in_path} should not contain directories!')
+        click.echo(f'{in_path} should not contain directories!')
+        exit(1)
 
     repo_path = join(repo, name)
 
     if exists(repo_path):
-        print(f'Removing a file!')
+        if opts.verbose:
+            click.echo(f'Remove {repo_path}')
+
         remove(repo_path)
 
-    # TODO: Add percentage indicator
     with open(repo_path, 'ab') as f:
         for file in files:
+
+            if opts.verbose:
+                click.echo(f'join file: {file}')
+
             with open(file, 'rb') as fp:
                 f.write(fp.read())
 
-    # # Here name is going to be a name use in /dev/mapper/name
     run_command(['cryptsetup', 'luksOpen', repo_path, str(name)])
     run_command(['mount', join('/dev/mapper/', str(name)), str(mount_point)])
 
 
 @cli.command()
 @click.argument('name', required=True)
-def umount(name):
+@pass_config
+def umount(opts, name):
     config = get_configuration(configs, name)
+
     repo = configs['repository']
     input_ = config['input']
     mount = config['mount_point']
 
-    if not exists(mount):
-        raise ValueError(f'{mount} does not exist!')
+    check_existence([repo, input_, mount])
 
     run_command(['umount', mount])
     run_command(['sudo', 'cryptsetup', 'luksClose', f'/dev/mapper/{name}'])
@@ -128,6 +151,9 @@ def umount(name):
         remove(join(input_, file))
 
     repo_path = join(repo, name)
+
+    if opts.verbose:
+        click.echo(f'Splitting a file {repo_path}')
 
     run_command(['split', '--bytes=100MB', repo_path, join(input_, name)])
 
