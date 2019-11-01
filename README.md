@@ -19,8 +19,8 @@ We cannot trust cloud providers but still want to use their services. We need to
 ```
 
 ```
-$ drop --name=storage_name --mount=/folder/to/mount
-$ drop --name=storage_name --umount=/folder/to/unmount
+$ drop mount storage_name /folder/to/mount
+$ drop unmount storage_name /folder/to/unmount
 ```
 
 ### Specification

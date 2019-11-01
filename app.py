@@ -1,11 +1,9 @@
 import click
 import json
-from mimetypes import guess_type
 import subprocess
 from os import listdir, remove
 from os.path import isfile, join, isdir, exists
 from typing import List
-import re
 
 configs = None
 
@@ -13,14 +11,15 @@ configs = None
 def validate_config(config):
     names = set()
     inputs = set()
-    repo = configs['repo']
+    repo = config['repository']
+
     if not exists(repo):
         raise ValueError(f'{repo} does not exist')
 
     for device in config['devices']:
         name = device['name']
         input_ = device['input']
-        output = device['output']
+        output = device['mount_point']
 
         if name in names:
             raise ValueError('Duplicate names are not allowed!')
@@ -47,6 +46,7 @@ def load_configs():
     '''
     files = [file for file in listdir('.') if isfile(
         file) and file == '.dropconfig']
+    print(files)
 
     if len(files) == 0:
         raise ValueError(".dropconfig is not found in the current directory")
@@ -70,16 +70,20 @@ def run_command(command: List[str]):
     result = subprocess.run(command, capture_output=True)
     print(result)
     if result.returncode:
-        raise ValueError(f'Command {command[0]} failed to run!')
+        raise ValueError(f'{result.stderr}')
 
 
-@click.command()
-@click.option('--name', help='Enter name of the device.')
-@click.option('--mount', help='Enter path to mount device on.')
-def mount(name, mount):
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.argument('name', required=True)
+def mount(name):
     config = get_configuration(configs, name)
     in_path, mount_point = config['input'], config['mount_point']
-    # We are going to store assebled images in the repository
+    # We are going to store assembled images in the repository
     repo = configs['repository']
     # need to check that the repository exists b4 going further
     # need to check that the input exists b4 going further
@@ -95,30 +99,39 @@ def mount(name, mount):
         print(f'Removing a file!')
         remove(repo_path)
 
+    # TODO: Add percentage indicator
     with open(repo_path, 'ab') as f:
         for file in files:
             with open(file, 'rb') as fp:
                 f.write(fp.read())
 
-    # Here name is going to be a name use in /dev/mapper/name
+    # # Here name is going to be a name use in /dev/mapper/name
     run_command(['cryptsetup', 'luksOpen', repo_path, str(name)])
-    run_command(['mount', str(mount_point), str(name)])
+    run_command(['mount', join('/dev/mapper/', str(name)), str(mount_point)])
 
 
-@click.command()
-@click.option('--name', help='Enter name of the device.')
-@click.option('--umount', help='Enter path to mount device on.')
-def umount(name, mount):
-    # TODO: Figure out how to use two functions for different flags
-    # we are going to unmount
-    # we are going to close luks device
-    # we are going to clean the destination
-    # we are going to partition file
-    # we are going to archive old version
-    # we are going to save it
-    pass
+@cli.command()
+@click.argument('name', required=True)
+def umount(name):
+    config = get_configuration(configs, name)
+    repo = configs['repository']
+    input_ = config['input']
+    mount = config['mount_point']
+
+    if not exists(mount):
+        raise ValueError(f'{mount} does not exist!')
+
+    run_command(['umount', mount])
+    run_command(['sudo', 'cryptsetup', 'luksClose', f'/dev/mapper/{name}'])
+
+    for file in listdir(input_):
+        remove(join(input_, file))
+
+    repo_path = join(repo, name)
+
+    run_command(['split', '--bytes=100MB', repo_path, join(input_, name)])
 
 
 if __name__ == "__main__":
     configs = load_configs()
-    mount()
+    cli()
