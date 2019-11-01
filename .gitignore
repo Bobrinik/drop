@@ -1,3 +1,6 @@
 .vscode/
 drop/
+data/
+__pycache__/
+repository/
 .dropconfig
