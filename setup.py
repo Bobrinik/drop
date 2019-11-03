@@ -4,9 +4,10 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name='Drop',
-    version='1.0',
+    name='drop-cli',
+    version='1.1',
     author='Maksim Bober',
+    url="https://github.com/Bobrinik/drop",
     long_description=long_description,
     long_description_content_type='text/markdown',
     py_modules=['drop'],

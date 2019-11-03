@@ -6,12 +6,11 @@ from os import listdir, remove
 from os.path import isfile, join, isdir, exists
 from typing import List
 
-configs = None
-
 
 class Options:
     def __init__(self):
         self.verbose = False
+        self.configs = None
 
 
 pass_config = click.make_pass_decorator(Options, ensure=True)
@@ -92,7 +91,7 @@ def run_command(command: List[str]):
 @pass_config
 def cli(opts, verbose):
     opts.verbose = verbose
-    configs = load_configs()
+    opts.configs = load_configs()
 
 
 @cli.command()
@@ -123,6 +122,7 @@ def generate_config(opts):
 @click.argument('name', required=True)
 @pass_config
 def mount(opts, name):
+    configs = opts.configs
     config = get_configuration(configs, name)
     in_path, mount_point = config['input'], config['mount_point']
     repo = configs['repository']
@@ -160,6 +160,7 @@ def mount(opts, name):
 @click.argument('name', required=True)
 @pass_config
 def umount(opts, name):
+    configs = opts.configs
     config = get_configuration(configs, name)
 
     repo = configs['repository']
