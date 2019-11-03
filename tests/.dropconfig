@@ -1,9 +1,10 @@
 {
+    "repository": "./test_data/repository",
     "devices": [
         {
             "name": "storage_name",
-            "input": "/path/to/folder/with/binary/files",
-            "outptut": "/path/to/concatenated/file"
+            "input": "./test_data/data",
+            "mount_point": "./test_data/mount"
         }
     ]
 }
