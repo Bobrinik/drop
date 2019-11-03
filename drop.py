@@ -96,6 +96,30 @@ def cli(opts, verbose):
 
 
 @cli.command()
+@pass_config
+def generate_config(opts):
+    if exists('.dropconfig'):
+        click.echo(f'.dropconfig already exists')
+        exit(1)
+    config = '''{
+    "repository":"./repository",
+    "devices": [
+        {
+            "name": "storage_name",
+            "input": "./data",
+            "mount_point": "./mount"
+        }
+    ]
+}
+    '''
+    with open('.dropconfig', 'w') as f:
+        f.write(config)
+
+    if opts.verbose:
+        print('.dropconfig is created')
+
+
+@cli.command()
 @click.argument('name', required=True)
 @pass_config
 def mount(opts, name):
