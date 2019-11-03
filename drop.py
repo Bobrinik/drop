@@ -92,7 +92,7 @@ def run_command(command: List[str]):
 @pass_config
 def cli(opts, verbose):
     opts.verbose = verbose
-    pass
+    configs = load_configs()
 
 
 @cli.command()
@@ -183,5 +183,4 @@ def umount(opts, name):
 
 
 if __name__ == "__main__":
-    configs = load_configs()
     cli()
