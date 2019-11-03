@@ -25,6 +25,12 @@ We cannot trust cloud providers but still want to use their services. We need to
 
 ### Example usage
 ```
+$ drop generate-config
 $ drop mount name_from_dropconfig
-$ drop unmount name_from_dropconfig
+$ drop umount name_from_dropconfig
 ```
+
+### Commands
+- `generate-config` is going to create a skeleton `.dropconfig` file that is used by the drop command line
+- `mount` is going to mount a devices with `name_from_dropconfig` on the mount point defined in the `.dropconfig`
+- `umount` is to umount a device with `name_from_dropconfig` from the mount point defined in the `.dropconfig`
