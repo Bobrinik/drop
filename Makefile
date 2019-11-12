@@ -8,7 +8,7 @@ clean:
 	rm -r dist/
 
 test:
-	. proj/bin/activate; python3 -m pytest -vr /tests
+	. proj/bin/activate; cd tests/; python3 -m pytest -vr /tests
 
 assemble:
 	python3 setup.py sdist bdist_wheel
