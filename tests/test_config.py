@@ -1,8 +1,8 @@
-from drop import load_configs, validate_config
-from pytest import raises
-
 import sys
-sys.path.append('../')
+sys.path.append('../')  # noqa E402
+
+from pytest import raises
+from drop import load_configs, validate_config
 
 
 def test_config_file():
@@ -13,7 +13,7 @@ def test_config_file():
             {
                 'name': 'storage_name',
                 'input': './test_data/data',
-                'mount_point': './test_data/mount' 
+                'mount_point': './test_data/mount'
             }
         ]
     }
