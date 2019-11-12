@@ -52,8 +52,8 @@ def test_duplicate_names():
         ]
     }
 
-    with raises(ValueError):
+    with raises(SystemExit):
         validate_config(configs_1)
 
-    with raises(ValueError):
+    with raises(SystemExit):
         validate_config(configs_2)
