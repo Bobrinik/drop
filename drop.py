@@ -23,13 +23,18 @@ def check_existence(paths: List[str]):
             exit(1)
 
 
+def does_device_exist(device_name: str):
+    return any([f for f in listdir('/dev/mapper') if f == device_name])
+
+
 def validate_config(config):
     names = set()
     inputs = set()
     repo = config['repository']
 
     if not exists(repo):
-        raise ValueError(f'{repo} does not exist')
+        click.echo(f'{repo} does not exist')
+        exit(1)
 
     for device in config['devices']:
         name = device['name']
@@ -37,16 +42,20 @@ def validate_config(config):
         output = device['mount_point']
 
         if name in names:
-            raise ValueError('Duplicate names are not allowed!')
+            click.echo('Duplicate names are not allowed!')
+            exit(1)
 
         if input_ in inputs:
-            raise ValueError('Duplicate input paths are not allowed!')
+            click.echo('Duplicate input paths are not allowed!')
+            exit(1)
 
         if not exists(input_):
-            raise ValueError(f'{input_} does not exist!')
+            click.echo(f'{input_} does not exist!')
+            exit(1)
 
         if not exists(output):
-            raise ValueError(f'{output} does not exist!')
+            click.echo(f'{output} does not exist!')
+            exit(1)
 
         names.add(name)
         inputs.add(input_)
@@ -63,9 +72,12 @@ def load_configs():
              if isfile(file) and file == '.dropconfig']
 
     if len(files) == 0:
-        raise ValueError(".dropconfig is not found in the current directory")
+        click.echo(".dropconfig is not found in the current directory")
+        exit(1)
+
     elif len(files) > 1:
-        raise ValueError("you have more than one .dropconfig file")
+        click.echo("you have more than one .dropconfig file")
+        exit(1)
 
     with open(files[0]) as f:
         config = json.load(f)
@@ -77,13 +89,15 @@ def get_configuration(config, name):
     for device in config['devices']:
         if device['name'] == name:
             return device
-    raise ValueError('Device does not exist in .dropconfig')
+    click.echo(f'Device does not exist in .dropconfig''')
+    exit(1)
 
 
 def run_command(command: List[str]):
     result = subprocess.run(command, capture_output=True)
     if result.returncode:
-        raise ValueError(f'{result.stderr}')
+        click.echo(f'{result.stderr}')
+        exit(1)
 
 
 @click.group()
@@ -152,8 +166,13 @@ def mount(opts, name):
             with open(file, 'rb') as fp:
                 f.write(fp.read())
 
-    run_command(['cryptsetup', 'luksOpen', repo_path, str(name)])
-    run_command(['mount', join('/dev/mapper/', str(name)), str(mount_point)])
+    if does_device_exist(str(name)):
+        click.echo(f'/dev/mapper/{name} already exists.')
+        exit(1)
+
+    run_command(['sudo', 'cryptsetup', 'luksOpen', repo_path, str(name)])
+    run_command(['sudo', 'mount', join(
+        '/dev/mapper/', str(name)), str(mount_point)])
 
 
 @cli.command()
@@ -169,7 +188,7 @@ def umount(opts, name):
 
     check_existence([repo, input_, mount])
 
-    run_command(['umount', mount])
+    run_command(['sudo', 'umount', mount])
     run_command(['sudo', 'cryptsetup', 'luksClose', f'/dev/mapper/{name}'])
 
     for file in listdir(input_):
